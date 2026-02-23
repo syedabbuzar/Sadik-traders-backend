@@ -1,5 +1,5 @@
 // controllers/lowStockController.js
-import * as lowStockService from "../Services/LowstockService";
+import * as lowStockService from "../Services/LowstockService.js";
 
 // 📥 GET Low Stock
 export const getLowStockController = async (req, res) => {
