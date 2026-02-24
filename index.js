@@ -15,12 +15,23 @@ dotenv.config();
 
 const app = express();
 
-// ===== CONNECT DB =====
-await connectDB();
-
 // ===== MIDDLEWARES =====
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+
+// ✅ DB CONNECT (SAFE WAY FOR VERCEL)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("DB Error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+});
 
 // ===== TEST ROUTE =====
 app.get("/", (req, res) => {
