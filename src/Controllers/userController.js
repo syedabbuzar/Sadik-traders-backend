@@ -1,11 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import {
-  createUser,
-  findUserByEmail,
-  getAllUsers,
-  getUserById,
-} from "../services/userService.js";
+import { createUser, findUserByEmail, getAllUsers, getUserById } from "../Services/userService.js";
 
 const generateToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -15,18 +10,16 @@ export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ msg: "All fields required" });
-    }
-
     const exists = await findUserByEmail(email);
     if (exists) return res.status(400).json({ msg: "User already exists" });
 
     const hash = await bcrypt.hash(password, 10);
 
-    let userRole = "user";
+    // -------------------- ROLE LOGIC --------------------
+    let userRole = "user"; // default
 
     if (role === "admin" && email === process.env.ADMIN_EMAIL) {
+      // Only email in .env can be admin
       userRole = "admin";
     }
 
@@ -37,14 +30,9 @@ export const registerUser = async (req, res) => {
       role: userRole,
     });
 
-    res.status(201).json({
+    res.json({
       token: generateToken(user._id, user.role),
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -64,39 +52,30 @@ export const loginUser = async (req, res) => {
 
     res.json({
       token: generateToken(user._id, user.role),
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// -------------------- PROFILE --------------------
+// -------------------- GET PROFILE --------------------
 export const getProfile = async (req, res) => {
   const user = await getUserById(req.user._id);
   res.json(user);
 };
 
-// -------------------- ADMIN --------------------
+// -------------------- ADMIN ONLY CONTROLLERS --------------------
 export const allUsers = async (req, res) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ msg: "Admin only access" });
-  }
+  if (req.user.role !== "admin") return res.status(403).json({ msg: "Admin only access" });
 
   const users = await getAllUsers();
   res.json(users);
 };
 
-// -------------------- CREATE ADMIN --------------------
+// CREATE NEW ADMIN (ONLY ADMIN CAN CREATE)
 export const createAdmin = async (req, res) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ msg: "Admin only access" });
-  }
+  if (req.user.role !== "admin") return res.status(403).json({ msg: "Admin only access" });
 
   try {
     const { name, email, password } = req.body;
@@ -113,14 +92,9 @@ export const createAdmin = async (req, res) => {
       role: "admin",
     });
 
-    res.status(201).json({
+    res.json({
       token: generateToken(adminUser._id, adminUser.role),
-      user: {
-        _id: adminUser._id,
-        name: adminUser.name,
-        email: adminUser.email,
-        role: adminUser.role,
-      },
+      user: adminUser,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
