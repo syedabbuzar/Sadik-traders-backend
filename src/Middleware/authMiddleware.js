@@ -1,33 +1,77 @@
 import jwt from "jsonwebtoken";
 import User from "../Model/userModel.js";
 
-// VERIFY TOKEN
+// -------------------- VERIFY TOKEN --------------------
 export const protect = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    let token;
 
-    if (!token)
-      return res.status(401).json({ msg: "No token, authorization denied" });
+    // Check Authorization header
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
+    // No token
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        msg: "No token, authorization denied",
+      });
+    }
+
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = await User.findById(decoded.id).select("-password");
+    // Attach user to request
+    const user = await User.findById(decoded.id).select("-password");
 
-    if (!req.user)
-      return res.status(401).json({ msg: "User not found" });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    req.user = user;
 
     next();
   } catch (err) {
-    res.status(401).json({ msg: "Invalid token" });
+    console.error("Auth Error:", err.message);
+
+    return res.status(401).json({
+      success: false,
+      msg: "Invalid or expired token",
+    });
   }
 };
 
-// ADMIN CHECK
+// -------------------- ADMIN CHECK --------------------
 export const isAdmin = (req, res, next) => {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({
-      msg: "Access denied. Admin only",
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        msg: "Not authorized, user missing",
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        msg: "Access denied. Admin only",
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error("Admin Check Error:", err.message);
+
+    return res.status(500).json({
+      success: false,
+      msg: "Server error in admin check",
     });
   }
-  next();
 };
