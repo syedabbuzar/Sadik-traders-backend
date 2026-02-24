@@ -1,13 +1,25 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+
+let isConnected = false;
 
 const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+  if (isConnected) {
+    return;
+  }
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      dbName: 'sadik_traders', // 🔥 FORCE DATABASE NAME
+    });
+
+    isConnected = true;
+
+    console.log('✅ MongoDB Connected Successfully');
+    console.log('👉 Database:', conn.connection.name);
+    console.log('👉 Host:', conn.connection.host);
   } catch (error) {
-    console.error("❌ DB Error:", error.message);
-    process.exit(1);
+    console.error('❌ MongoDB Connection Error:', error.message);
+    throw new Error('Database connection failed');
   }
 };
 
