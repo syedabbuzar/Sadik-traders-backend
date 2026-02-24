@@ -1,26 +1,27 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-let isConnected = false;
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 const connectDB = async () => {
-  if (isConnected) {
-    return;
-  }
+  if (cached.conn) return cached.conn;
 
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      dbName: 'sadik_traders', // 🔥 FORCE DATABASE NAME
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      dbName: "sadik_traders",
+      bufferCommands: false,
     });
-
-    isConnected = true;
-
-    console.log('✅ MongoDB Connected Successfully');
-    console.log('👉 Database:', conn.connection.name);
-    console.log('👉 Host:', conn.connection.host);
-  } catch (error) {
-    console.error('❌ MongoDB Connection Error:', error.message);
-    throw new Error('Database connection failed');
   }
+
+  cached.conn = await cached.promise;
+
+  console.log("✅ MongoDB Connected");
+  console.log("👉 DB:", cached.conn.connection.name);
+
+  return cached.conn;       
 };
 
 export default connectDB;
