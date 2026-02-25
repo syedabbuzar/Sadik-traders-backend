@@ -1,23 +1,35 @@
 import Product from "../Model/productModel.js";
 
-export const createProduct = async (data) =>
-  await Product.create(data);
+// CREATE
+export const createProduct = async (data) => Product.create(data);
 
-export const getProducts = async () =>
-  await Product.find().sort({ createdAt: -1 });
+// GET ALL
+export const getProducts = async () => Product.find().sort({ createdAt: -1 });
 
-export const getProductById = async (id) =>
-  await Product.findById(id);
+// GET BY ID
+export const getProductById = async (id) => Product.findById(id);
 
+// UPDATE
 export const updateProduct = async (id, data) =>
-  await Product.findByIdAndUpdate(id, data, { new: true });
+  Product.findByIdAndUpdate(id, data, { new: true });
 
-export const deleteProduct = async (id) =>
-  await Product.findByIdAndDelete(id);
+// DELETE
+export const deleteProduct = async (id) => Product.findByIdAndDelete(id);
 
-export const addStock = async (id, qty) =>
-  await Product.findByIdAndUpdate(
-    id,
-    { $inc: { stock: qty } },
-    { new: true }
-  );
+// ADD STOCK (KG + Gram support)
+export const addStock = async (id, { kg = 0, gm = 0 }) => {
+  const product = await Product.findById(id);
+  if (!product) throw new Error("Product not found");
+
+  let totalGm = product.stockGm + gm;
+  let extraKg = Math.floor(totalGm / 1000);
+  let remainingGm = totalGm % 1000;
+
+  const updatedKg = product.stockKg + kg + extraKg;
+
+  product.stockKg = updatedKg;
+  product.stockGm = remainingGm;
+
+  await product.save();
+  return product;
+};

@@ -1,10 +1,6 @@
 import express from "express";
 import * as controller from "../Controllers/productController.js";
 import { protect, isAdmin } from "../Middleware/authMiddleware.js";
-import {
-  searchProducts,
-  getProductById,
-} from "../Controllers/productController.js";
 
 const router = express.Router();
 
@@ -18,11 +14,7 @@ router.put("/:id", protect, isAdmin, controller.updateProduct);
 router.delete("/:id", protect, isAdmin, controller.deleteProduct);
 router.patch("/:id/stock", protect, isAdmin, controller.addStock);
 
-// ✅ IMPORTANT: SEARCH FIRST
-router.get("/search", protect, isAdmin, searchProducts);
-
-// ✅ GET BY ID (always last)
-router.get("/:id", protect, isAdmin, getProductById);
-
+// SEARCH
+router.get("/search", protect, isAdmin, controller.searchProducts);
 
 export default router;

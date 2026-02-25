@@ -5,7 +5,6 @@ import {
   fetchBill,
   removeBill,
 } from "../Controllers/billController.js";
-
 import { protect, isAdmin } from "../Middleware/authMiddleware.js";
 
 const router = express.Router();

@@ -1,64 +1,45 @@
 import mongoose from "mongoose";
 
 const itemSchema = new mongoose.Schema({
-  productName: { type: String, required: true, trim: true },
+  productName: String,
+  category: String,
+  price: Number,
+  quantity: Number,
+  total: Number,
 
-  category: { type: String, default: "general" }, // ✅ NEW
-
-  price: { type: Number, required: true },
-
-  quantity: {
-    type: Number,
-    required: true,
-    min: 1,
-  },
-
-  total: { type: Number, required: true },
+  grossWeightKg: Number,
+  grossWeightGm: Number,
+  lessWeightKg: Number,
+  lessWeightGm: Number,
+  unit: String,
+  netWeight: Number,
 });
 
-const billSchema = new mongoose.Schema(
-  {
-    customerName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+const billSchema = new mongoose.Schema({
+  customerName: { type: String, default: "" },
+  customerType: { type: String, default: "normal" },
 
-    customerType: {
-      type: String,
-      enum: ["normal", "retailer"],
-      default: "normal",
-    },
+  invoiceNo: { type: String, default: "" },
+  invoiceNumber: { type: Number, default: 0 }, 
 
-    discount: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
+  mobile: { type: String, default: "" },
+  date: { type: String, default: "" },
 
-    items: {
-      type: [itemSchema],
-      required: true,
-    },
+  hamali: { type: Number, default: 0 },
+  roundedOff: { type: Number, default: 0 },
 
-    subtotal: {
-      type: Number,
-      required: true,
-    },
+  subtotal: { type: Number, default: 0 },
+  total: { type: Number, default: 0 },
 
-    total: {
-      type: Number,
-      required: true,
-    },
+  items: [itemSchema],
 
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-  },
-  { timestamps: true }
-);
+  paidAmount: { type: Number, default: 0 }, // received payment
+  balance: { type: Number, default: 0 }, // total - paidAmount
+  status: { type: String, default: "PENDING" }, // PENDING / PAID
 
-export default mongoose.model("Bill", billSchema);
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+  createdAt: { type: Date, default: Date.now },
+});
+
+export default mongoose.models.Bill || mongoose.model("Bill", billSchema);

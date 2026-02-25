@@ -3,55 +3,86 @@ import {
   getBills,
   getBillById,
   deleteBill,
+  getLastInvoice,
 } from "../Services/billService.js";
-
 
 // CREATE BILL
 export const createNewBill = async (req, res) => {
   try {
-    const { customerName, customerType, discount = 0, items } = req.body;
+    const {
+      customerName,
+      customerType = "normal",
+      items = [],
+      invoiceNo,
+      mobile,
+      date,
+      hamali = 0,
+      roundedOff = 0,
+      paidAmount = 0, // ✅ receive initial payment
+    } = req.body;
 
-    if (!customerName || !items?.length) {
-      return res.status(400).json({ msg: "Missing fields" });
+    if (!customerName || !items.length) return res.status(400).json({ msg: "Missing fields" });
+
+    // AUTO INVOICE
+    let finalInvoiceNo = invoiceNo;
+    let invoiceNumber = 0;
+
+    if (!invoiceNo || invoiceNo.trim() === "") {
+      const lastBill = await getLastInvoice();
+      invoiceNumber = lastBill ? lastBill.invoiceNumber + 1 : 1;
+      finalInvoiceNo = `INV-${String(invoiceNumber).padStart(4, "0")}`;
+    } else {
+      const lastBill = await getLastInvoice();
+      invoiceNumber = lastBill ? lastBill.invoiceNumber + 1 : 1;
     }
 
-    // ✅ FIX quantity + category
+    // FIX ITEMS
     const fixedItems = items.map((i) => ({
       productName: i.productName,
       category: i.category || "general",
       price: Number(i.price),
       quantity: Number(i.quantity),
-      total: Number(i.price) * Number(i.quantity),
+      total: Number(i.total),
+
+      grossWeightKg: Number(i.grossWeightKg) || 0,
+      grossWeightGm: Number(i.grossWeightGm) || 0,
+      lessWeightKg: Number(i.lessWeightKg) || 0,
+      lessWeightGm: Number(i.lessWeightGm) || 0,
+      unit: i.unit || "Kgs",
+      netWeight: Number(i.netWeight) || 0,
     }));
 
-    const subtotal = fixedItems.reduce(
-      (sum, i) => sum + i.total,
-      0
-    );
+    const subtotal = fixedItems.reduce((sum, i) => sum + i.total, 0);
+    const total = subtotal + Number(hamali) + Number(roundedOff);
 
-    const discountAmount = (subtotal * discount) / 100;
-    const total = subtotal - discountAmount;
+    // Status & balance
+    const balance = total - Number(paidAmount);
+    const status = balance > 0 ? "PENDING" : "PAID";
 
     const bill = await createBill({
       customerName,
       customerType,
-      discount,
-      items: fixedItems,
+      invoiceNo: finalInvoiceNo,
+      invoiceNumber,
+      mobile,
+      date,
+      hamali,
+      roundedOff,
       subtotal,
       total,
-      createdBy: req.user._id,
+      paidAmount,
+      balance,
+      status,
+      items: fixedItems,
+      createdBy: req.user?._id,
     });
 
-    res.status(201).json({
-      msg: "Bill Created",
-      bill,
-    });
+    res.status(201).json({ msg: "Bill Created", bill });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 // GET ALL
 export const fetchBills = async (req, res) => {
@@ -59,13 +90,11 @@ export const fetchBills = async (req, res) => {
   res.json(bills);
 };
 
-
 // GET ONE
 export const fetchBill = async (req, res) => {
   const bill = await getBillById(req.params.id);
   res.json(bill);
 };
-
 
 // DELETE
 export const removeBill = async (req, res) => {
