@@ -4,6 +4,7 @@ import {
   getBillById,
   deleteBill,
   getLastInvoice,
+  updateBill, // ✅ added
 } from "../Services/billService.js";
 
 // CREATE BILL
@@ -18,12 +19,12 @@ export const createNewBill = async (req, res) => {
       date,
       hamali = 0,
       roundedOff = 0,
-      paidAmount = 0, // ✅ receive initial payment
+      paidAmount = 0,
     } = req.body;
 
-    if (!customerName || !items.length) return res.status(400).json({ msg: "Missing fields" });
+    if (!customerName || !items.length)
+      return res.status(400).json({ msg: "Missing fields" });
 
-    // AUTO INVOICE
     let finalInvoiceNo = invoiceNo;
     let invoiceNumber = 0;
 
@@ -36,7 +37,6 @@ export const createNewBill = async (req, res) => {
       invoiceNumber = lastBill ? lastBill.invoiceNumber + 1 : 1;
     }
 
-    // FIX ITEMS
     const fixedItems = items.map((i) => ({
       productName: i.productName,
       category: i.category || "general",
@@ -55,7 +55,6 @@ export const createNewBill = async (req, res) => {
     const subtotal = fixedItems.reduce((sum, i) => sum + i.total, 0);
     const total = subtotal + Number(hamali) + Number(roundedOff);
 
-    // Status & balance
     const balance = total - Number(paidAmount);
     const status = balance > 0 ? "PENDING" : "PAID";
 
@@ -78,7 +77,6 @@ export const createNewBill = async (req, res) => {
     });
 
     res.status(201).json({ msg: "Bill Created", bill });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -100,4 +98,20 @@ export const fetchBill = async (req, res) => {
 export const removeBill = async (req, res) => {
   await deleteBill(req.params.id);
   res.json({ msg: "Bill deleted" });
+};
+
+
+
+// ✅ ADD THIS NEW UPDATE CONTROLLER
+export const editBill = async (req, res) => {
+  try {
+    const updatedBill = await updateBill(req.params.id, req.body);
+
+    if (!updatedBill)
+      return res.status(404).json({ msg: "Bill not found" });
+
+    res.json({ msg: "Bill Updated", bill: updatedBill });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
