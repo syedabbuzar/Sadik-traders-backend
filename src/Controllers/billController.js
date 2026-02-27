@@ -12,7 +12,7 @@ export const createNewBill = async (req, res) => {
   try {
     const {
       customerName,
-      customerType = "normal",
+      customerType = "normal",      
       items = [],
       invoiceNo,
       mobile,

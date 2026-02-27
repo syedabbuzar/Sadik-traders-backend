@@ -16,4 +16,4 @@ router.get("/:id", protect, isAdmin, fetchBill);
 router.put("/:id", protect, isAdmin, editBill); // ✅ NEW UPDATE ROUTE
 router.delete("/:id", protect, isAdmin, removeBill);
 
-export default router;
+export default router;                   

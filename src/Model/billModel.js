@@ -11,7 +11,7 @@ const itemSchema = new mongoose.Schema({
   grossWeightGm: Number,
   lessWeightKg: Number,
   lessWeightGm: Number,
-  unit: String,
+  unit: String,    
   netWeight: Number,
 });
 

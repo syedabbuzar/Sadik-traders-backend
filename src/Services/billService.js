@@ -9,4 +9,4 @@ export const getLastInvoice = () => Bill.findOne().sort({ invoiceNumber: -1 });
 
 // ✅ ADD THIS FUNCTION (NEW)
 export const updateBill = (id, data) =>
-  Bill.findByIdAndUpdate(id, data, { new: true });
+  Bill.findByIdAndUpdate(id, data, { new: true });      
